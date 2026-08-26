@@ -1,0 +1,82 @@
+{
+  "manifest_version": 3,
+  "name": "Tokka",
+  "version": "1.2.0",
+  "author": "NullTrace",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{a1e6f3d2-7c9b-4f10-9e3a-7b1c2d4e5f60}",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  },
+  "description": "Token count, cache timer, cost estimate, and native session/weekly usage bars for claude.ai - plus a lightweight token widget for ChatGPT, Gemini, DeepSeek, and Kimi.",
+  "homepage_url": "https://github.com/Wooinxlkz/tokka",
+  "permissions": ["storage"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "96": "icons/icon96.png",
+    "128": "icons/icon128.png",
+    "256": "icons/icon256.png"
+  },
+  "action": {
+    "default_title": "Tokka",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "96": "icons/icon96.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*"],
+      "css": ["src/styles.css"],
+      "js": [
+        "src/content/constants.js",
+        "src/content/settings.js",
+        "src/content/alerts.js",
+        "src/content/spend-tracker.js",
+        "src/content/bridge-client.js",
+        "src/vendor/o200k_base.js",
+        "src/content/tokens.js",
+        "src/content/ui.js",
+        "src/content/main.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*",
+        "https://chat.deepseek.com/*",
+        "https://kimi.com/*",
+        "https://www.kimi.com/*",
+        "https://kimi.moonshot.cn/*"
+      ],
+      "css": ["src/styles.css"],
+      "js": [
+        "src/content/constants.js",
+        "src/content/settings.js",
+        "src/content/alerts.js",
+        "src/vendor/o200k_base.js",
+        "src/content/site-registry.js",
+        "src/content/generic-widget.js",
+        "src/content/generic-main.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/injected/bridge.js"],
+      "matches": ["https://claude.ai/*"]
+    }
+  ]
+}
