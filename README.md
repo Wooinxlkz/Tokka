@@ -124,6 +124,17 @@ Settings (toggles, thresholds, pricing model) are stored locally via `chrome.sto
 - On other sites: makes zero network requests — only reads the DOM that's already loaded in your tab
 - Settings are stored locally in your browser via the standard extension storage API
 
+## Limitations
+
+Being upfront about what Tokka can't do, rather than faking it:
+
+- **Claude Code is not trackable.** It's a CLI/desktop tool, not a web page - a browser extension has no way to see it at all.
+- **Cowork is not currently tracked.** It's a separate desktop app; we don't have confirmation it ever runs inside a claude.ai browser tab.
+- **No free/paid tier detection, anywhere.** On claude.ai, we couldn't confirm a plan/tier field exists in the data we read. On ChatGPT/Gemini/DeepSeek/Kimi, there's no usage API exposed to the page at all, so tier would have to be guessed from UI heuristics - we chose not to ship that as if it were a real number.
+- **ChatGPT/Gemini/DeepSeek/Kimi numbers are approximate, full stop.** No official usage API, no verified tier data, static context-limit guesses that don't adjust per selected model. Treat the widget on those sites as "roughly how much you've said," not a quota meter.
+
+See [CHANGELOG.md](./CHANGELOG.md) for the full reasoning behind each of these.
+
 ## Project structure
 
 ```

@@ -9,6 +9,20 @@
 		return `${minutes}:${String(seconds).padStart(2, '0')}`;
 	}
 
+	// `offsetParent === null` alone is NOT a reliable "is this hidden" check - position:fixed
+	// elements legitimately report null offsetParent even while fully visible. Combine it with
+	// computed style + bounding box so a fixed ancestor can't cause a false "hidden" verdict
+	// (which would ironically recreate the same "bar never appears" bug via a different path).
+	function isVisible(el) {
+		if (!el || el === document.body) return true;
+		const style = window.getComputedStyle(el);
+		if (style.display === 'none' || style.visibility === 'hidden') return false;
+		const rect = el.getBoundingClientRect();
+		if (rect.width > 0 || rect.height > 0) return true;
+		// Zero-size and no positioned/fixed escape hatch - genuinely not rendered.
+		return style.position === 'fixed' && el.offsetParent !== null;
+	}
+
 	function formatResetCountdown(timestampMs) {
 		// <= 0: reset time reached
 		const diffMs = timestampMs - Date.now();
@@ -218,9 +232,22 @@
 			let usageReattachPending = false;
 			let headerReattachPending = false;
 
+			// A node can be present in the DOM but invisible in a way that's NOT one of the
+			// normal, intentional states (no usage data yet -> tk-hidden; no tokens yet ->
+			// empty). Only flag it as "gone" when it has real content rendered into it, isn't
+			// deliberately tk-hidden, and still isn't visible - that combination means it got
+			// orphaned inside a hidden subtree (e.g. toolbar moved under a closed panel), which
+			// `document.contains()` alone can't detect since the node is still technically there.
+			const isGone = (el) => {
+				if (!el || !document.contains(el)) return true;
+				if (el.classList?.contains('tk-hidden')) return false;
+				if (el.children.length === 0) return false;
+				return !isVisible(el);
+			};
+
 			this.domObserver = new MutationObserver(() => {
-				const usageMissing = this.usageLine && !document.contains(this.usageLine);
-				const headerMissing = !document.contains(this.headerContainer);
+				const usageMissing = !!this.usageLine && isGone(this.usageLine);
+				const headerMissing = isGone(this.headerContainer);
 
 				if (usageMissing && !usageReattachPending) {
 					usageReattachPending = true;
@@ -362,13 +389,19 @@
 			if (!modelSelector) return;
 			const gridContainer = modelSelector.closest('[data-testid="chat-input-grid-container"]');
 			const gridArea = modelSelector.closest('[data-testid="chat-input-grid-area"]');
+			// Was previously restricted to `flex-direction: row` only, so a toolbar that
+			// reflows to a column (narrow window, sidebar open, etc.) would never match here -
+			// it would still fall through to the parentElement-chain fallback below, but that
+			// fallback can land on the wrong node. Accepting any flex/inline-flex/grid container
+			// with multiple buttons is a much more reliable "this looks like the toolbar" signal,
+			// since direction doesn't affect where `.after()` inserts in the DOM.
 			const findToolbarRow = (el, stopAt) => {
 				let cur = el;
 				while (cur && cur !== document.body) {
 					if (stopAt && cur === stopAt) break;
 					if (cur !== el && cur.nodeType === 1) {
 						const style = window.getComputedStyle(cur);
-						if (style.display === 'flex' && style.flexDirection === 'row') {
+						if (style.display === 'flex' || style.display === 'inline-flex' || style.display === 'grid') {
 							const buttons = cur.querySelectorAll('button').length;
 							if (buttons > 1) return cur;
 						}
@@ -383,6 +416,14 @@
 				findToolbarRow(modelSelector) ||
 				modelSelector.parentElement?.parentElement?.parentElement;
 			if (!toolbarRow) return;
+
+			// A node can be "in the DOM" but hidden (display:none ancestor, an unrendered
+			// portal, etc.) - inserting next to it would make the bar exist without ever
+			// being seen, and worse, `document.contains()` would then think it's already
+			// attached and stop retrying. Bail out here instead and let the observer in
+			// _observeDom() try again on the next DOM mutation.
+			if (!isVisible(toolbarRow)) return;
+
 			if (toolbarRow.nextElementSibling !== this.usageLine) {
 				toolbarRow.after(this.usageLine);
 			}

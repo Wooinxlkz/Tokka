@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.2.1
+
+**Bug fix: claude.ai bar sometimes not appearing.**
+
+Found and fixed a real bug in `attachUsageLine()`: it located the toolbar to attach the usage bar next to by requiring `display:flex; flex-direction:row` with multiple buttons. On a narrower window or with the sidebar open, Claude's toolbar can reflow to a column layout, which this check would never match - it fell through to a much less reliable fallback (three parents up from the model selector), which could land on the wrong, sometimes hidden, node.
+
+- Loosened the toolbar-detection heuristic to accept `flex`, `inline-flex`, or `grid` regardless of direction
+- Added a real visibility check (computed style + bounding box, not just `offsetParent`, since `offsetParent` alone gives false positives on `position: fixed` elements) before accepting an anchor to insert next to
+- Fixed the reattach-observer's "is it still there" check, which previously only asked `document.contains()` - true even for a bar sitting inside a hidden subtree. It now also catches that case, without misfiring on the two legitimate hidden states (no usage data yet, no tokens yet)
+
+**What we investigated and did NOT change, on purpose:**
+
+- **Claude Code tracking** — not possible. Claude Code is a CLI/desktop tool, not a web page; a browser extension has no DOM to attach to and no path to this data at all.
+- **Cowork tracking** — not implemented. Cowork is a separate desktop app per Anthropic's own docs; we have no confirmation it ever runs inside a claude.ai browser tab, so there's nothing to build against without that being verified first.
+- **Free/paid tier detection (claude.ai)** — not implemented. We looked for a plan/tier field in the usage data we already read and couldn't confirm one exists without live testing against a real account. We're not going to guess and label it as real.
+- **Free/paid tier detection (ChatGPT/Gemini/DeepSeek/Kimi)** — not implemented. None of these expose a usage/quota API to the page. The only way to guess tier would be fragile DOM heuristics (e.g. "an Upgrade button is present"), and even a correct guess wouldn't map cleanly onto our token-based bar, since some of these platforms rate-limit by message count, not tokens. We're not shipping a guess dressed up as a real number.
+- **Reverse-engineering the other providers' private APIs** to get real usage/tier parity with Claude - deliberately not attempted. That would mean scraping undocumented internal endpoints, which is a real Terms-of-Service risk on each platform and isn't something to do without an explicit decision to accept that risk.
+
+Nothing above is silently degraded or faked - the widgets on ChatGPT/Gemini/DeepSeek/Kimi behave exactly as documented in v1.1.0/v1.2.0: an approximate DOM-based token count, nothing more.
+
 ## v1.2.0
 
 **Alerts, badge, and spend tracking.**
