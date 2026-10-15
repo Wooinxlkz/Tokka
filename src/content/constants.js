@@ -29,11 +29,22 @@
 		BOLD_DARK: '#faf9f5'
 	});
 
+	// Maps a model id ("claude-sonnet-5-5") or a UI label ("Sonnet 5.5") to a pricing family.
+	// Returns null when it can't tell, so callers can fall back instead of guessing.
+	TK.resolveModel = function resolveModel(text) {
+		if (typeof text !== 'string') return null;
+		const t = text.toLowerCase();
+		if (t.includes('opus')) return 'opus';
+		if (t.includes('sonnet')) return 'sonnet';
+		if (t.includes('haiku')) return 'haiku';
+		return null;
+	};
+
 	// Rough $/million-token pricing for the cost estimate feature.
 	// Approximate on purpose — always shown with a "~" and meant as a ballpark, not a bill.
 	TK.PRICING = Object.freeze({
-		opus: { label: 'Opus', input: 15, output: 75 },
-		sonnet: { label: 'Sonnet', input: 3, output: 15 },
-		haiku: { label: 'Haiku', input: 0.8, output: 4 }
+		opus: { label: 'Opus', input: 4, output: 20 },
+		sonnet: { label: 'Sonnet', input: 2, output: 10 },
+		haiku: { label: 'Haiku', input: 1, output: 5 }
 	});
 })();

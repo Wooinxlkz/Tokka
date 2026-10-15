@@ -152,6 +152,8 @@
 		// Cache parsed timestamps to avoid Date.parse() every tick
 		usageResetMs.five_hour = normalized.five_hour?.resets_at ? Date.parse(normalized.five_hour.resets_at) : null;
 		usageResetMs.seven_day = normalized.seven_day?.resets_at ? Date.parse(normalized.seven_day.resets_at) : null;
+		TK.burn?.push(normalized.five_hour?.utilization, normalized.five_hour?.resets_at);
+		TK.burn?.record(normalized);
 		ui.setUsage(normalized);
 	}
 
@@ -211,21 +213,43 @@
 		if (!data) return;
 
 		const metrics = await TK.tokens.computeConversationMetrics(data);
+		const settings = TK.settings.get();
+
+		// Calibration: one multiplier the user can tune against a real token count.
+		const k = settings.calibration || 1;
+		const scale = (n) => Math.round(n * k);
+		const totalTokens = scale(metrics.totalTokens);
+		const userTokens = scale(metrics.userTokens);
+		const assistantTokens = scale(metrics.assistantTokens);
+
+		// Model: what the picker shows right now wins, then whatever the conversation payload says.
+		const pickerText = document.querySelector(TK.DOM.MODEL_SELECTOR_DROPDOWN)?.textContent || '';
+		const modelFamily = TK.resolveModel(pickerText) || TK.resolveModel(data?.model);
+
 		ui.setConversationMetrics({
-			totalTokens: metrics.totalTokens,
-			userTokens: metrics.userTokens,
-			assistantTokens: metrics.assistantTokens,
+			totalTokens,
+			userTokens,
+			assistantTokens,
 			messageCount: metrics.trunkMessageCount,
-			cachedUntil: metrics.cachedUntil
+			cachedUntil: metrics.cachedUntil,
+			modelFamily
 		});
 
-		if (TK.settings?.get()?.spendTrackingEnabled) {
-			TK.spendTracker?.record({
-				conversationId,
-				userTokens: metrics.userTokens,
-				assistantTokens: metrics.assistantTokens,
-				costModel: TK.settings.get().costModel
-			});
+		const limit = settings.contextLimit || TK.CONST.CONTEXT_LIMIT_TOKENS;
+		TK.heavy?.check({ conversationId, pct: (totalTokens / limit) * 100 });
+
+		// Last chat snapshot for the popup (raw = before calibration, so the popup can calibrate against it).
+		try {
+			chrome.storage.local.set({
+				tokkaLast: { t: Date.now(), tokens: totalTokens, raw: metrics.totalTokens, limit, model: modelFamily }
+			})?.catch?.(() => {});
+		} catch {
+			// ignore
+		}
+
+		if (settings.spendTrackingEnabled) {
+			const costKey = settings.costModel === 'auto' ? modelFamily || 'sonnet' : settings.costModel;
+			TK.spendTracker?.record({ conversationId, userTokens, assistantTokens, costModel: costKey });
 		}
 	}
 

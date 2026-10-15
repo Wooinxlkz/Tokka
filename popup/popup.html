@@ -6,125 +6,91 @@
 	<link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-	<header class="tp-header">
-		<img class="tp-logo" src="../icons/icon48.png" alt="" />
-		<div class="tp-headerText">
-			<h1>Tokka</h1>
-			<p>Token &amp; usage HUD for claude.ai + friends</p>
-		</div>
+	<header class="hd">
+		<img class="logo" src="../icons/icon48.png" alt="" />
+		<div class="hdText"><b>Tokka</b><span id="ver"></span></div>
+		<nav class="tabs" role="tablist">
+			<span class="ind"></span>
+			<button class="tab on" data-tab="usage" role="tab">Usage</button>
+			<button class="tab" data-tab="library" role="tab">Library</button>
+			<button class="tab" data-tab="settings" role="tab">Settings</button>
+		</nav>
 	</header>
 
-	<main class="tp-body">
-		<div class="tp-spendCard" id="spendCard">
-			<div class="tp-spendItem">
-				<span class="tp-spendLabel">Today</span>
-				<span class="tp-spendValue" id="spendToday">$0.00</span>
+	<main class="body">
+		<!-- USAGE -->
+		<section class="pane on" id="pane-usage">
+			<div class="grid2">
+				<div class="card"><span class="lbl">Today</span><span class="val" id="spendToday">$0.00</span></div>
+				<div class="card"><span class="lbl">7 days</span><span class="val" id="spendWeek">$0.00</span></div>
 			</div>
-			<div class="tp-spendDivider"></div>
-			<div class="tp-spendItem">
-				<span class="tp-spendLabel">This week</span>
-				<span class="tp-spendValue" id="spendWeek">$0.00</span>
+
+			<div class="card block">
+				<div class="row"><span class="lbl">Session</span><span class="mono" id="sessPct">&ndash;</span></div>
+				<div class="meter"><i id="sessFill"></i></div>
+				<p class="sub" id="sessNote">Open a claude.ai chat and send a message to start tracking.</p>
+				<svg id="spark" class="spark" viewBox="0 0 300 40" preserveAspectRatio="none"></svg>
+				<div class="row sparkLbl"><span>24h ago</span><span>now</span></div>
 			</div>
-			<button type="button" class="tp-spendReset" id="spendReset" title="Reset tracked spend">Reset</button>
-		</div>
-		<p class="tp-note tp-spendNote">Estimated from claude.ai conversations only, using your pricing table below. Local to this browser.</p>
 
-		<div class="tp-sectionLabel">Display</div>
-		<section class="tp-section">
-			<label class="tp-row">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Message count</span>
-					<span class="tp-rowSub">Show trunk message count next to the token count</span>
-				</span>
-				<input type="checkbox" id="showMessageCount" class="tp-switch" />
-			</label>
+			<div class="card block">
+				<div class="row"><span class="lbl">Estimated spend, last 7 days</span></div>
+				<div class="bars" id="bars"></div>
+			</div>
 
-			<label class="tp-row">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Compact mode</span>
-					<span class="tp-rowSub">Tighter spacing, shorter labels</span>
-				</span>
-				<input type="checkbox" id="compactMode" class="tp-switch" />
-			</label>
+			<div class="card block">
+				<div class="row"><span class="lbl">Last chat</span><span class="mono" id="lastPct">&ndash;</span></div>
+				<div class="meter"><i id="lastFill"></i></div>
+				<p class="sub" id="lastNote">Nothing yet.</p>
+			</div>
+			<button class="ghost" id="spendReset" type="button">Reset tracked history</button>
 		</section>
 
-		<div class="tp-sectionLabel">Cost</div>
-		<section class="tp-section">
-			<label class="tp-row">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Cost estimate</span>
-					<span class="tp-rowSub">Rough ~$ estimate for the current conversation</span>
-				</span>
-				<input type="checkbox" id="showCostEstimate" class="tp-switch" />
-			</label>
-
-			<div class="tp-subrow" id="costModelRow">
-				<span class="tp-rowSub">Pricing table</span>
-				<select id="costModel" class="tp-select">
-					<option value="opus">Opus</option>
-					<option value="sonnet" selected>Sonnet</option>
-					<option value="haiku">Haiku</option>
-				</select>
-			</div>
-
-			<label class="tp-row tp-subToggle">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Spend tracking</span>
-					<span class="tp-rowSub">Keep the Today/Week totals above</span>
-				</span>
-				<input type="checkbox" id="spendTrackingEnabled" class="tp-switch" />
-			</label>
-			<p class="tp-note">Estimate only — always verify against your actual plan or the Claude Console.</p>
+		<!-- LIBRARY -->
+		<section class="pane" id="pane-library">
+			<input class="search" id="libSearch" type="search" placeholder="Search plugins and skills" />
+			<div id="libList"></div>
+			<p class="sub">Add your own by editing <code>library/library.json</code> and reloading the extension.</p>
 		</section>
 
-		<div class="tp-sectionLabel">Alerts</div>
-		<section class="tp-section">
-			<div class="tp-row">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Warning threshold</span>
-					<span class="tp-rowSub">Bars turn red past this % on every site</span>
-				</span>
-				<span class="tp-thresholdValue" id="warnThresholdValue">90%</span>
+		<!-- SETTINGS -->
+		<section class="pane" id="pane-settings">
+			<h3>Display</h3>
+			<label class="set"><span><b>Message count</b><small>Show message count next to tokens</small></span><input type="checkbox" id="showMessageCount" class="sw" /></label>
+			<label class="set"><span><b>Compact mode</b><small>Tighter spacing, shorter labels</small></span><input type="checkbox" id="compactMode" class="sw" /></label>
+
+			<h3>Tokens and cost</h3>
+			<label class="set"><span><b>Cost estimate</b><small>Show ~$ for the current chat</small></span><input type="checkbox" id="showCostEstimate" class="sw" /></label>
+			<div class="set"><span><b>Pricing</b><small>Auto reads the model you picked</small></span>
+				<select id="costModel"><option value="auto">Auto</option><option value="opus">Opus</option><option value="sonnet">Sonnet</option><option value="haiku">Haiku</option></select></div>
+			<div class="set"><span><b>Context window</b><small>Scale of the context bar</small></span>
+				<select id="contextLimit"><option value="200000">200k</option><option value="1000000">1M</option></select></div>
+			<label class="set"><span><b>Spend tracking</b><small>Keep the history on the Usage tab</small></span><input type="checkbox" id="spendTrackingEnabled" class="sw" /></label>
+
+			<h3>Calibration</h3>
+			<div class="set"><span><b>Count multiplier</b><small id="calNote">Tokka counts with a stand-in tokenizer</small></span><span class="mono" id="calVal">1.00x</span></div>
+			<div class="calRow">
+				<input type="number" id="calReal" min="1" placeholder="Real token count for last chat" />
+				<button class="btn" id="calApply" type="button">Apply</button>
+				<button class="btn ghostBtn" id="calReset" type="button">Reset</button>
 			</div>
-			<input type="range" id="warnThreshold" class="tp-slider" min="50" max="100" step="5" />
 
-			<label class="tp-row tp-subToggle">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Near-limit pulse</span>
-					<span class="tp-rowSub">Brief flash the moment a bar crosses the threshold</span>
-				</span>
-				<input type="checkbox" id="nearLimitAlert" class="tp-switch" />
-			</label>
-
-			<label class="tp-row tp-subToggle">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Toolbar badge</span>
-					<span class="tp-rowSub">Show live % on the extension icon</span>
-				</span>
-				<input type="checkbox" id="badgeEnabled" class="tp-switch" />
-			</label>
-		</section>
-
-		<div class="tp-sectionLabel">Sites</div>
-		<section class="tp-section tp-section--last">
-			<label class="tp-row">
-				<span class="tp-rowText">
-					<span class="tp-rowTitle">Other AI sites</span>
-					<span class="tp-rowSub">Floating token widget on ChatGPT, Gemini, DeepSeek &amp; Kimi</span>
-				</span>
-				<input type="checkbox" id="enableOtherSites" class="tp-switch" />
-			</label>
-			<p class="tp-note">Best-effort on non-Claude sites — no official usage API, so it's an approximate DOM-based count. DeepSeek and Kimi support is experimental.</p>
+			<h3>Alerts</h3>
+			<div class="set"><span><b>Warning threshold</b><small>Bars turn red past this</small></span><span class="mono" id="warnVal">90%</span></div>
+			<input type="range" id="warnThreshold" min="50" max="100" step="5" />
+			<label class="set"><span><b>Heavy chat prompt</b><small>Offer a handoff prompt past the threshold</small></span><input type="checkbox" id="heavyChatWarn" class="sw" /></label>
+			<label class="set"><span><b>Near-limit pulse</b><small>Flash when a bar crosses it</small></span><input type="checkbox" id="nearLimitAlert" class="sw" /></label>
+			<label class="set"><span><b>Toolbar badge</b><small>Live % on the icon</small></span><input type="checkbox" id="badgeEnabled" class="sw" /></label>
+			<p class="sub">Everything is an estimate. Check the Claude Console for real billing.</p>
 		</section>
 	</main>
 
-	<footer class="tp-footer">
+	<footer class="ft">
 		<a href="https://github.com/Wooinxlkz/tokka" target="_blank" rel="noopener">GitHub</a>
-		<span class="tp-dot">&middot;</span>
-		<span id="tp-version"></span>
-		<span class="tp-credit">by NullTrace</span>
+		<span>by NullTrace</span>
 	</footer>
 
+	<script src="../src/shared/burn.js"></script>
 	<script src="popup.js"></script>
 </body>
 </html>

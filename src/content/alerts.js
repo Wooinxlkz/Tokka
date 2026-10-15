@@ -34,7 +34,7 @@
 		try {
 			if (!chrome?.runtime?.sendMessage) return;
 			if (!enabled || typeof pct !== 'number') {
-				chrome.runtime.sendMessage({ type: 'tk:badge', text: '', color: accent || '#D97757', title: 'Tokka' });
+				chrome.runtime.sendMessage({ type: 'tk:badge', text: '', color: accent || '#D97757', title: 'Tokka' })?.catch?.(() => {});
 				return;
 			}
 			const rounded = Math.round(pct);
@@ -44,7 +44,7 @@
 				text: String(rounded),
 				color,
 				title: title || `Tokka — ${rounded}%`
-			});
+			})?.catch?.(() => {});
 		} catch {
 			// extension context invalidated (e.g. page navigating away) - ignore, next scan will retry
 		}

@@ -329,7 +329,7 @@
 
 		_setupTooltips() {
 			this.lengthTooltip = makeTooltip(
-				"Approximate tokens (excludes system prompt).\nUses a generic tokenizer, may differ from Claude's count.\nBecomes invalid after context compaction.\nBar scale: 200k tokens (Claude's maximum context length, will compact before then)."
+				"Approximate tokens (excludes system prompt).\nEstimated with a stand-in tokenizer, so it may differ from Claude's count (you can calibrate it in settings).\nBecomes invalid after context compaction.\nBar scale: the context window set in Tokka settings."
 			);
 			setupTooltip(
 				this.lengthGroup,
@@ -443,7 +443,7 @@
 		}
 
 		setConversationMetrics(metrics = {}) {
-			const { totalTokens, userTokens, assistantTokens, messageCount, cachedUntil } = metrics;
+			const { totalTokens, userTokens, assistantTokens, messageCount, cachedUntil, modelFamily } = metrics;
 			this.pendingCache = false;
 			this.lastMetrics = metrics;
 
@@ -458,7 +458,7 @@
 			}
 
 			const compact = !!this.settings?.compactMode;
-			const pct = Math.max(0, Math.min(100, (totalTokens / TK.CONST.CONTEXT_LIMIT_TOKENS) * 100));
+			const pct = Math.max(0, Math.min(100, (totalTokens / (this.settings?.contextLimit || TK.CONST.CONTEXT_LIMIT_TOKENS)) * 100));
 			this.lengthDisplay.textContent = compact
 				? `~${totalTokens.toLocaleString()}`
 				: `~${totalTokens.toLocaleString()} tokens`;
@@ -476,14 +476,16 @@
 				typeof userTokens === 'number' &&
 				typeof assistantTokens === 'number'
 			) {
-				const table = TK.PRICING?.[this.settings.costModel] || TK.PRICING?.sonnet;
+				const auto = this.settings.costModel === 'auto';
+				const key = auto ? modelFamily || 'sonnet' : this.settings.costModel;
+				const table = TK.PRICING?.[key] || TK.PRICING?.sonnet;
 				if (table) {
 					const cost = (userTokens / 1e6) * table.input + (assistantTokens / 1e6) * table.output;
 					const costText = cost < 0.01 && cost > 0 ? '<$0.01' : `$${cost.toFixed(2)}`;
 					this.costEstimateDisplay.textContent = `~${costText}`;
 					if (this.costTooltip) {
 						this.costTooltip.textContent =
-							`Rough estimate using ${table.label} list pricing ` +
+							`Rough estimate using ${table.label} list pricing${auto ? (modelFamily ? ' (detected from your chat)' : ' (model not recognised, using Sonnet)') : ''} ` +
 							`($${table.input}/M in, $${table.output}/M out).\n` +
 							`Ignores prompt caching, tool tokens beyond this trunk, and any discounts.\n` +
 							`Verify against the Claude Console for real usage.`;
@@ -503,7 +505,7 @@
 				this.lengthGroup.replaceChildren(this.lengthDisplay);
 				if (this.lengthTooltip) {
 					this.lengthTooltip.textContent =
-						"Approximate tokens (excludes system prompt).\nUses a generic tokenizer, may differ from Claude's count.\nThis count is invalid after compaction.";
+						"Approximate tokens (excludes system prompt).\nEstimated with a stand-in tokenizer, so it may differ from Claude's count (you can calibrate it in settings).\nThis count is invalid after compaction.";
 				}
 			} else {
 				this.lengthDisplay.style.opacity = '';
@@ -600,7 +602,8 @@
 				this.sessionResetMs = session.resets_at ? Date.parse(session.resets_at) : null;
 				this.sessionWindowStartMs = this.sessionResetMs ? this.sessionResetMs - 5 * 60 * 60 * 1000 : null;
 				const resetText = this.sessionResetMs ? ` · resets in ${formatResetCountdown(this.sessionResetMs)}` : '';
-				this.sessionUsageSpan.textContent = compact ? `${pct}%` : `Session: ${pct}%${resetText}`;
+				const etaText = TK.burn?.etaText?.() || '';
+				this.sessionUsageSpan.textContent = compact ? `${pct}%` : `Session: ${pct}%${resetText}${etaText}`;
 
 				const width = Math.max(0, Math.min(100, rawPct));
 				const isWarn = width >= warnAt;
@@ -614,7 +617,7 @@
 					pct: width,
 					warnAt,
 					accent: TK.COLORS.PROGRESS_FILL_LIGHT,
-					title: `Tokka — Session ${pct}% used${resetText}`
+					title: `Tokka — Session ${pct}% used${resetText}${etaText}`
 				});
 			} else {
 				this.sessionUsageSpan.textContent = '';

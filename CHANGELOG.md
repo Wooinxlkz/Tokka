@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.4.1
+
+- Popup back to the original cream and terracotta palette
+- Motion throughout the popup: sliding tab indicator, staggered card entrances, count-up spend numbers, growing chart bars, drawn sparkline, animated meters, smooth Library expand, springy switches (all respect reduced-motion)
+- Thin scrollbars themed to the UI on every scrollable area
+- Heavy-chat prompt restyled to match
+
+## v1.4.0
+
+- **Fix:** `Uncaught (in promise) Error: No tab with id` in the service worker. Badge calls now swallow the rejection when a tab closes mid-update
+- Library tab with install commands for Tauri Audit and Arabic Formal Writer, driven by `library/library.json`
+- Per-model pricing (auto-detected from the model picker), plus a context window setting (200k or 1M)
+- Burn-rate prediction on the session bar and badge tooltip
+- Usage history: 24h sparkline and 7-day spend chart in the popup
+- Heavy-chat prompt with a copyable handoff prompt
+- Calibration multiplier for token counts
+- Popup redesigned: cold dark theme, three tabs
+
+## v1.3.0
+
+**Claude only.**
+
+- Removed the ChatGPT, Gemini, DeepSeek and Kimi widget entirely: scripts, styles, manifest block, the "Other AI sites" setting, and all docs
+- Extension now runs on claude.ai only
+- Refreshed the cost table to current list pricing (Opus $4/$20, Sonnet $2/$10, Haiku $1/$5 per million tokens). Estimates only, check the Console for real billing
+- README no longer claims the vendored tokenizer is Claude's own. It's OpenAI's `o200k_base`, used as an approximation
+
 ## v1.2.1
 
 **Bug fix: claude.ai bar sometimes not appearing.**

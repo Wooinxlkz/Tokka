@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "tauri-audit",
+      "name": "Tauri Audit",
+      "kind": "plugin",
+      "tagline": "Security audit for Tauri apps. Chains findings into attack paths, grades the app, and fixes without breaking it.",
+      "tags": [
+        "tauri",
+        "security",
+        "rust"
+      ],
+      "repo": "https://github.com/Wooinxlkz/Tauri-audit-plugin",
+      "steps": [
+        {
+          "label": "Claude Code: add the marketplace",
+          "cmd": "/plugin marketplace add Wooinxlkz/Tauri-audit-plugin"
+        },
+        {
+          "label": "Claude Code: install",
+          "cmd": "/plugin install tauri-audit@tauri-audit"
+        },
+        {
+          "label": "Run it inside a Tauri project",
+          "cmd": "/tauri-audit"
+        },
+        {
+          "label": "Claude.ai / Cowork",
+          "note": "Zip the skills/tauri-audit folder and upload it in Settings, Skills."
+        },
+        {
+          "label": "No Claude, just the checker",
+          "cmd": "python3 skills/tauri-audit/scripts/tauri_audit.py path/to/your/app"
+        }
+      ]
+    },
+    {
+      "id": "arabic-formal-writer",
+      "name": "Arabic Formal Writer",
+      "kind": "plugin",
+      "tagline": "Write and review formal Modern Standard Arabic with correct Gulf, Egyptian, Levantine and Maghrebi conventions.",
+      "tags": [
+        "arabic",
+        "writing",
+        "msa"
+      ],
+      "repo": "https://github.com/Wooinxlkz/arabic-formal-writer",
+      "steps": [
+        {
+          "label": "Claude Code: add the marketplace",
+          "cmd": "/plugin marketplace add Wooinxlkz/arabic-formal-writer"
+        },
+        {
+          "label": "Claude Code: install",
+          "cmd": "/plugin install arabic-formal-writer@arabic-formal-writer-marketplace"
+        },
+        {
+          "label": "Draft a document",
+          "cmd": "/arabic-letter <your request>"
+        },
+        {
+          "label": "Review a document",
+          "cmd": "/arabic-review <text>"
+        },
+        {
+          "label": "Claude.ai",
+          "note": "Zip the skills/arabic-formal-writing folder and upload it in Settings, Skills. Agents and commands are Claude Code only."
+        }
+      ]
+    }
+  ]
+}
