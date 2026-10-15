@@ -65,6 +65,8 @@ There's only one build — no separate downloads per browser.
 
 ### Userscript (Tampermonkey / Violentmonkey)
 
+The userscript is a lighter standalone build and does not include the v1.4 features (Library tab, per-model pricing, burn-rate prediction, history, heavy-chat prompt, calibration). Use the extension for those.
+
 1. Install a userscript manager if you don't have one
 2. Open [`userscript/tokka.user.js`](./userscript/tokka.user.js) and install it
 3. Visit claude.ai — the header and usage bars will appear
@@ -87,16 +89,19 @@ The popup also shows a running **Today / This week** estimated spend total acros
 
 ### Settings
 
-Click the Tokka icon in your browser toolbar to open Settings:
+Click the Tokka icon in your browser toolbar. The popup has three tabs: **Usage** (spend, session pace, 24h sparkline, 7-day chart, last chat), **Library** (plugins and skills) and **Settings**:
 
 | Section | Setting | What it does | Default |
 |---|---|---|---|
 | Display | Message count | Adds `· N msg` next to the token count | On |
 | Display | Compact mode | Shorter labels, tighter spacing | Off |
 | Cost | Cost estimate | Adds `· ~$X.XX` using the pricing table you pick  | Off |
-| Cost | Pricing table | Opus / Sonnet / Haiku list pricing used for the estimate | Sonnet |
+| Cost | Pricing | Auto reads the model you picked, or force Opus / Sonnet / Haiku list pricing | Auto |
+| Cost | Context window | Scale of the context bar: 200k or 1M | 200k |
 | Cost | Spend tracking | Keeps the Today/Week totals shown at the top of the popup | On |
+| Calibration | Count multiplier | Enter the real token count for your last chat and Tokka scales all estimates to match (0.5x to 2x) | 1.00x |
 | Alerts | Warning threshold | % at which bars turn red | 90% |
+| Alerts | Heavy chat prompt | Past the threshold, offers a copyable handoff prompt for a fresh chat | On |
 | Alerts | Near-limit pulse | Brief flash when a bar crosses the threshold | On |
 | Alerts | Toolbar badge | Live % on the extension icon | On |
 
@@ -115,7 +120,7 @@ Settings (toggles, thresholds, pricing model) are stored locally via `chrome.sto
 
 - All data stays local — no external servers, no telemetry, no analytics
 - On claude.ai: reads your `lastActiveOrg` cookie to query Claude's own `/usage` endpoint; requests only ever go to `claude.ai`
-- Settings are stored locally in your browser via the standard extension storage API
+- Settings, spend totals, your last chat's token count and a 72-hour log of usage percentages are stored locally in your browser via the standard extension storage API. None of it is sent anywhere
 
 ## Limitations
 
@@ -141,14 +146,21 @@ tokka/
 │   │   ├── constants.js      Shared colors, pricing table, config
 │   │   ├── settings.js       Settings load/save/sync (chrome.storage.local)
 │   │   ├── alerts.js         Shared near-limit pulse + badge-messaging helpers
-│   │   ├── spend-tracker.js  Local daily/weekly $ tally 
+│   │   ├── spend-tracker.js  Local daily/weekly $ tally
+│   │   ├── heavy-chat.js     One-time "chat is heavy" prompt with handoff copy
+
 │   │   ├── tokens.js         claude.ai conversation → token/message metrics
 │   │   ├── ui.js             claude.ai header + usage bar UI
 │   │   ├── main.js           claude.ai entry point
 │   │   └── bridge-client.js  claude.ai page-bridge message relay
+│   ├── shared/
+│   │   └── burn.js           Burn-rate prediction + usage log (content script and popup)
 │   ├── injected/            Page-context bridge (reads Claude's API responses)
 │   ├── vendor/               Vendored o200k_base tokenizer
 │   └── styles.css
+├── library/
+│   └── library.json         Plugins and skills shown in the Library tab
+├── popup/                   Popup UI (Usage / Library / Settings)
 ├── userscript/              Standalone userscript build 
 └── icons/
 ```
